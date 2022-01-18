@@ -3,10 +3,12 @@
     const CARD_SIZE = 100;
     const CARD_COLOR = '#000';
     const CARD_SPACE = 30;
+    const TIME = 10;
     const WRAP_WIDTH = (CARDS_NUM * CARD_SIZE / 4) + CARD_SPACE;
 
     function createWrapperCards() {
         const wrapper = document.createElement('div');
+        wrapper.classList.add('wrapper')
         wrapper.style.cssText = `
             width: ${WRAP_WIDTH}px;
             height: ${WRAP_WIDTH}px;
@@ -58,8 +60,8 @@
 
     function swapNumArrayCards(array) {
         for(let i = array.length - 1; i >= 0; i--){
-            k = Math.round(Math.random() * i);
-            m = array[i];
+            let k = Math.round(Math.random() * i);
+            let m = array[i];
             array[i] = array[k];
             array[k] = m;
         }
@@ -78,13 +80,64 @@
         return card;
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
+    function restartGame(wrap) {
+        wrap.remove();
+        initializeGame();
+    }
+
+    function createButtonRestart(wrap) {
+        const button = document.createElement('button');
+        button.textContent = 'RESTART MAZAFACKA';
+        button.style.cssText = `
+            position: absolute;
+            top: 10px;
+            left: 20px;
+        `;
+        button.addEventListener('click', () => {
+            restartGame(wrap);
+        })
+        return button
+    }
+
+    function startScreen() {
+        const button = document.createElement('button');
+        button.textContent = 'START';
+        button.addEventListener('click', () => {
+            initializeGame();
+            button.remove();
+        })
+        return button
+    }
+
+    function createTimer(time) {
+        const block = document.createElement('div');
+
+        block.textContent = time;
+        block.style.cssText = `
+            position: absolute;
+            left: 50%;
+            top: 20px;
+            transform: translateX(-50%);
+        `
+        let timer = setInterval(() => {
+            block.textContent -= 1;
+            if(block.textContent <= 0) clearInterval(timer)
+        }, 1000)
+        return block
+    }
+
+    function initializeGame() {
         const wrapperCards = createWrapperCards();
         const cards = createCards();
         const arrNumCards = generateArrayNumToCards();
+        const timer = createTimer(TIME);
+        let endGame = CARDS_NUM / 2;
         let openCards = [];
+        let maxOpen = 2;
+
 
         document.body.append(wrapperCards);
+        document.body.append(timer);
 
         cards.forEach((card, i) => {
             wrapperCards.append(card);
@@ -93,30 +146,30 @@
 
         wrapperCards.addEventListener('click', event => {
             const target = event.target;
-            if(target.className === 'card'
-                && (openCards.length < 2)
-                && (target.dataset.open !== '1')) {
+            if(target.className === 'card' && openCards.length < maxOpen) {
                 toOpenCard(target);
-                openCards.push(target)
+                openCards.push(target);
             }
-            if(openCards.length === 2){
-                const state = openCards[0].textContent === openCards[1].textContent;
+            if(openCards.length === maxOpen && openCards[0].textContent === openCards[1].textContent){
+                openCards = [];
+                --endGame;
+            }else if(openCards.length === maxOpen && openCards[0].textContent !== openCards[1].textContent){
                 setTimeout(() => {
-                    if(state){
-                        openCards[0].dataset.open = '2';
-                        openCards[1].dataset.open = '2';
-                        openCards = [];
-                        console.log('You\'re is cool');
-                    }else {
-                        openCards = [];
-                        console.log('Oh, it\'s wrong')
-                        cards.forEach(item => {
-                            if(item.dataset.open === '2') return
-                            toCloseCard(item);
-                        })
-                    }
-                }, 600);
+                    openCards.forEach(item => {
+                        toCloseCard(item)
+                    })
+                    openCards = [];
+                }, 300)
+            }
+            if(!endGame) {
+                console.log('End game');
+                wrapperCards.append(createButtonRestart(wrapperCards));
             }
         })
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const startButton = startScreen();
+        document.body.append(startButton)
     })
 })();
