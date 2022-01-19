@@ -9,37 +9,19 @@
     function createWrapperCards() {
         const wrapper = document.createElement('div');
         wrapper.classList.add('wrapper')
-        wrapper.style.cssText = `
-            width: ${WRAP_WIDTH}px;
-            height: ${WRAP_WIDTH}px;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-        `;
+        wrapper.style.width = `${WRAP_WIDTH}px`;
+        wrapper.style.height = `${WRAP_WIDTH}px`;
         return wrapper
     }
 
     function createCards() {
         const cards = [];
-
         for(let i = 0; i < CARDS_NUM; i++){
             const card = document.createElement('div');
-
             card.classList.add('card');
             card.dataset.open = '0';
-            card.style.cssText = `
-                color: #000;
-                font-family: Poppins;
-                font-size: 30px;
-                background-color:${CARD_COLOR}; 
-                width: ${CARD_SIZE}px; 
-                height: ${CARD_SIZE}px;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                cursor: pointer;
-                user-select: none;`;
-
+            card.style.width = `${CARD_SIZE}px`;
+            card.style.height = `${CARD_SIZE}px`;
             cards.push(card);
         }
         return cards;
@@ -54,8 +36,7 @@
                 arr.push(i);
             }
         }
-        const res = swapNumArrayCards(arr);
-        return res;
+        return swapNumArrayCards(arr);
     }
 
     function swapNumArrayCards(array) {
@@ -70,55 +51,71 @@
 
     function toOpenCard(card) {
         card.dataset.open = '1';
-        card.style.color = '#FFF';
+        card.style.color = '#000';
         return card;
     }
 
     function toCloseCard(card) {
         card.dataset.open = '0';
-        card.style.color = '#000';
+        card.style.color = '#32E44F';
         return card;
     }
 
-    function restartGame(wrap) {
-        wrap.remove();
-        initializeGame();
+    function restartGame() {
+        [...document.body.children].forEach(child => child.remove())
+        startScreen();
     }
 
-    function createButtonRestart(wrap) {
+    function createButton(title) {
         const button = document.createElement('button');
-        button.textContent = 'RESTART MAZAFACKA';
-        button.style.cssText = `
-            position: absolute;
-            top: 10px;
-            left: 20px;
-        `;
-        button.addEventListener('click', () => {
-            restartGame(wrap);
-        })
+        const x = Math.round(document.body.clientHeight - (document.body.clientHeight - WRAP_WIDTH) / 3);
+
+        button.textContent = title.toUpperCase();
+        button.classList.add(`button__${title}`, 'button');
+        button.style.top = `${x}px`;
+
         return button
     }
 
     function startScreen() {
-        const button = document.createElement('button');
-        button.textContent = 'START';
-        button.addEventListener('click', () => {
+        const startBlock = document.createElement('div');
+        const startButton = createButton('start');
+        const rowInput = createInputGroup('ROW');
+        const columnInput = createInputGroup('COLUMN');
+
+        startBlock.classList.add('start__block');
+
+        document.body.append(startButton);
+        document.body.append(startBlock);
+        startBlock.append(rowInput);
+        startBlock.append(columnInput);
+
+        startButton.addEventListener('click', () => {
+            [...document.body.children].forEach(child => child.remove())
             initializeGame();
-            button.remove();
         })
-        return button
+    }
+
+    function createInputGroup(labelTitle) {
+        const inputGroup = document.createElement('div');
+        const label = document.createElement('label');
+        const input = document.createElement('input');
+
+        inputGroup.classList.add('input__group');
+        label.classList.add('label');
+        input.classList.add('input');
+
+        inputGroup.append(label);
+        inputGroup.append(input);
+
+        label.textContent = `${labelTitle} :`;
+        return inputGroup;
     }
 
     function createTimer(time) {
         const block = document.createElement('div');
-
         block.textContent = time;
-        block.style.cssText = `
-            position: absolute;
-            left: 50%;
-            top: 20px;
-            transform: translateX(-50%);
-        `
+        block.classList.add('timer');
         let timer = setInterval(() => {
             block.textContent -= 1;
             if(block.textContent <= 0) clearInterval(timer)
@@ -130,23 +127,29 @@
         const wrapperCards = createWrapperCards();
         const cards = createCards();
         const arrNumCards = generateArrayNumToCards();
+        const restartButton = createButton('restart');
         const timer = createTimer(TIME);
+
         let endGame = CARDS_NUM / 2;
         let openCards = [];
         let maxOpen = 2;
 
-
         document.body.append(wrapperCards);
-        document.body.append(timer);
 
         cards.forEach((card, i) => {
             wrapperCards.append(card);
             card.textContent = arrNumCards[i]
         })
 
+        restartButton.addEventListener('click', () => {
+            restartGame(wrapperCards);
+        })
+
         wrapperCards.addEventListener('click', event => {
             const target = event.target;
-            if(target.className === 'card' && openCards.length < maxOpen) {
+            if(target.className === 'card' &&
+                openCards.length < maxOpen &&
+                !+target.dataset.open) {
                 toOpenCard(target);
                 openCards.push(target);
             }
@@ -163,13 +166,10 @@
             }
             if(!endGame) {
                 console.log('End game');
-                wrapperCards.append(createButtonRestart(wrapperCards));
+                wrapperCards.append(restartButton);
             }
         })
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        const startButton = startScreen();
-        document.body.append(startButton)
-    })
+    document.addEventListener('DOMContentLoaded', startScreen)
 })();
