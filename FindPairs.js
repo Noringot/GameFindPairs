@@ -1,27 +1,37 @@
 (() => {
-    const CARDS_NUM = 16;
-    const CARD_SIZE = 100;
-    const CARD_COLOR = '#000';
-    const CARD_SPACE = 30;
-    const TIME = 10;
-    const WRAP_WIDTH = (CARDS_NUM * CARD_SIZE / 4) + CARD_SPACE;
+    const options = {
+        ROW: 2,
+        COLUMN: 2,
+        CARD_SIZE: 100,
+        CARD_SPACE: 10,
+        TIME: 60,
+        CARDS_NUM: function () {
+            return this.ROW * this.COLUMN;
+        },
+        WRAP_WIDTH: function () {
+            return this.ROW * this.CARD_SIZE + (this.ROW - 1) * this.CARD_SPACE
+        },
+        WRAP_HEIGHT: function () {
+            return this.COLUMN * this.CARD_SIZE + (this.COLUMN - 1) * this.CARD_SPACE
+        }
+    }
 
     function createWrapperCards() {
         const wrapper = document.createElement('div');
         wrapper.classList.add('wrapper')
-        wrapper.style.width = `${WRAP_WIDTH}px`;
-        wrapper.style.height = `${WRAP_WIDTH}px`;
+        wrapper.style.width = `${options.WRAP_WIDTH()}px`;
+        wrapper.style.height = `${options.WRAP_HEIGHT()}px`;
         return wrapper
     }
 
     function createCards() {
         const cards = [];
-        for(let i = 0; i < CARDS_NUM; i++){
+        for(let i = 0; i < options.CARDS_NUM(); i++){
             const card = document.createElement('div');
             card.classList.add('card');
             card.dataset.open = '0';
-            card.style.width = `${CARD_SIZE}px`;
-            card.style.height = `${CARD_SIZE}px`;
+            card.style.width = `${options.CARD_SIZE}px`;
+            card.style.height = `${options.CARD_SIZE}px`;
             cards.push(card);
         }
         return cards;
@@ -29,13 +39,10 @@
 
     function generateArrayNumToCards() {
         const arr = [];
-        for(let i = 1; i <= CARDS_NUM; i++){
-            if(i > 8) {
-                arr.push(i - 8);
-            }else {
-                arr.push(i);
-            }
+        for(let i = 1; i <= options.CARDS_NUM(); i++){
+            arr.push(Math.ceil(i / 2));
         }
+        console.log(arr)
         return swapNumArrayCards(arr);
     }
 
@@ -47,6 +54,39 @@
             array[k] = m;
         }
         return array
+    }
+
+    function createButton(title) {
+        const button = document.createElement('button');
+        button.textContent = title.toUpperCase();
+        button.classList.add(`button__${title}`, 'button');
+        button.style.height = `80px`;
+        button.style.width = `600px`;
+
+        const x = Math.round(window.outerHeight - (document.body.clientHeight) / 4);
+        button.style.top = `${x}px`;
+
+        return button
+    }
+
+    function createStartInput(labelTitle) {
+        const inputGroup = document.createElement('div');
+        const label = document.createElement('label');
+        const input = document.createElement('input');
+
+        inputGroup.classList.add('input__group');
+        label.classList.add('label');
+        input.classList.add('input');
+
+        inputGroup.append(label);
+        inputGroup.append(input);
+
+        label.textContent = `${labelTitle} :`;
+        return {
+            inputGroup,
+            label,
+            input
+        };
     }
 
     function toOpenCard(card) {
@@ -61,57 +101,6 @@
         return card;
     }
 
-    function restartGame() {
-        [...document.body.children].forEach(child => child.remove())
-        startScreen();
-    }
-
-    function createButton(title) {
-        const button = document.createElement('button');
-        const x = Math.round(document.body.clientHeight - (document.body.clientHeight - WRAP_WIDTH) / 3);
-
-        button.textContent = title.toUpperCase();
-        button.classList.add(`button__${title}`, 'button');
-        button.style.top = `${x}px`;
-
-        return button
-    }
-
-    function startScreen() {
-        const startBlock = document.createElement('div');
-        const startButton = createButton('start');
-        const rowInput = createInputGroup('ROW');
-        const columnInput = createInputGroup('COLUMN');
-
-        startBlock.classList.add('start__block');
-
-        document.body.append(startButton);
-        document.body.append(startBlock);
-        startBlock.append(rowInput);
-        startBlock.append(columnInput);
-
-        startButton.addEventListener('click', () => {
-            [...document.body.children].forEach(child => child.remove())
-            initializeGame();
-        })
-    }
-
-    function createInputGroup(labelTitle) {
-        const inputGroup = document.createElement('div');
-        const label = document.createElement('label');
-        const input = document.createElement('input');
-
-        inputGroup.classList.add('input__group');
-        label.classList.add('label');
-        input.classList.add('input');
-
-        inputGroup.append(label);
-        inputGroup.append(input);
-
-        label.textContent = `${labelTitle} :`;
-        return inputGroup;
-    }
-
     function createTimer(time) {
         const block = document.createElement('div');
         block.textContent = time;
@@ -123,19 +112,45 @@
         return block
     }
 
-    function initializeGame() {
+    function restartGame() {
+        [...document.body.children].forEach(child => child.remove())
+        startScreen();
+    }
+
+    function startScreen() {
+        const startBlock = document.createElement('div');
+        const startButton = createButton('start');
+        const rowInput = createStartInput('ROW');
+        const columnInput = createStartInput('COLUMN');
+
+        startBlock.classList.add('start__block');
+
+        document.body.append(startButton);
+        document.body.append(startBlock);
+        startBlock.append(rowInput.inputGroup);
+        startBlock.append(columnInput.inputGroup);
+
+        startButton.addEventListener('click', () => {
+            [...document.body.children].forEach(child => child.remove())
+            initializeGame(rowInput.input.value, columnInput.input.value);
+        })
+    }
+
+    function initializeGame(row, col) {
+        if(row >= 2 && row <= 10) options.ROW = row;
+        if(col >= 2 && col <= 10) options.COLUMN = col;
+
         const wrapperCards = createWrapperCards();
         const cards = createCards();
         const arrNumCards = generateArrayNumToCards();
         const restartButton = createButton('restart');
-        const timer = createTimer(TIME);
 
-        let endGame = CARDS_NUM / 2;
+        let endGame = options.CARDS_NUM() / 2;
         let openCards = [];
         let maxOpen = 2;
 
         document.body.append(wrapperCards);
-
+        document.body.append(createTimer(options.TIME))
         cards.forEach((card, i) => {
             wrapperCards.append(card);
             card.textContent = arrNumCards[i]
